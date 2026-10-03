@@ -1,0 +1,15 @@
+<% @page_title = @video.title %>
+<div class="watch">
+  <div class="main">
+    <%== partial(:_player, v: @video) %>
+    <section id="info"><%== partial(:_info, v: @video) %></section>
+  </div>
+  <aside>
+    <h2>Related</h2>
+    <% if @related.empty? %>
+      <p class="empty">Nothing similar yet.</p>
+    <% else %>
+      <div class="side-list"><% @related.each do |v| %><%== partial(:_card, v: v) %><% end %></div>
+    <% end %>
+  </aside>
+</div>

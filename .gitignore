@@ -1,0 +1,60 @@
+# Patterns starting with "/" match at the repo root only. Keep it that way for
+# vendor/: an unanchored "vendor/" would also drop public/vendor (htmx, Video.js).
+
+# ---- Local config (copy .env.example) ----
+.env
+.env.*
+!.env.example
+/.aws/
+/.codex/
+/.agents/
+/.ssh/
+*.pem
+*.key
+
+# ---- Runtime data: SQLite DB, thumbnails, stills, previews, HLS ----
+/data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.db3
+*.db3-wal
+*.db3-shm
+*.db3-journal
+
+# ---- Media: never commit (family) videos — any case, cameras write .MOV/.MP4 ----
+/media/
+*.[mM][pP]4
+*.[mM]4[vV]
+*.[mM][oO][vV]
+*.[mM][kK][vV]
+*.[wW][eE][bB][mM]
+*.[aA][vV][iI]
+
+# ---- Ruby / Bundler ----
+/.bundle/
+/vendor/
+/coverage/
+/tmp/
+/log/
+*.log
+*.gem
+
+# ---- Editors / OS ----
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+# Personal Claude settings; the rest of .claude/ (settings.json, commands) is shared.
+.claude/settings.local.json

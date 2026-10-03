@@ -1,0 +1,32 @@
+<form class="edit" hx-put="/videos/<%= v.id %>" hx-target="#info" data-poster="<%= thumb_url(v) %>">
+  <label>Title <input name="title" value="<%= v.title %>" required></label>
+  <label>Description <textarea name="description" rows="4"><%= v.description %></textarea></label>
+  <label>Tags <span class="hint">comma separated</span>
+    <input name="tags" value="<%= v.tag_names.join(', ') %>" data-tag-input autocomplete="off">
+  </label>
+  <div class="tags tag-preview" data-tag-preview aria-live="polite">
+    <% v.tag_names.each do |t| %><span class="tag" style="<%= tag_style(t) %>"><%= t %></span><% end %>
+  </div>
+  <% count = Argentum::Ingest.still_count(v.id) %>
+  <fieldset class="stills">
+    <legend>Thumbnail <span class="hint">previewed on the player as you pick</span></legend>
+    <% if count.zero? %>
+      <p class="empty">No stills yet — use Reprocess to generate choices.</p>
+    <% else %>
+      <div class="still-grid">
+        <% count.times do |i| %>
+          <label class="still">
+            <input type="radio" name="thumb" value="<%= i %>"<%= ' checked' if v.thumb_index == i %>>
+            <img src="/stills/<%= v.id %>/<%= i %>.jpg" alt="Still <%= i + 1 %>" loading="lazy">
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+  </fieldset>
+  <div class="actions">
+    <button type="submit" class="primary">Save</button>
+    <button type="button" hx-get="/videos/<%= v.id %>/info" hx-target="#info" data-cancel>Cancel</button>
+    <button type="button" class="link" hx-post="/videos/<%= v.id %>/reprocess" hx-target="#info"
+            hx-confirm="Regenerate thumbnails, preview and segments for this video?">Reprocess</button>
+  </div>
+</form>

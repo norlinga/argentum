@@ -1,0 +1,23 @@
+<% @page_title = 'Library' %>
+<section>
+  <form class="filters" hx-get="/library" hx-target="#grid" hx-swap="innerHTML" hx-push-url="true"
+        hx-trigger="input changed delay:300ms from:find input[type=search], change from:find select">
+    <input type="search" name="q" placeholder="Filter…" value="<%= @q %>">
+    <input type="hidden" name="tag" value="<%= @tag %>">
+    <input type="hidden" name="fav" value="<%= @fav ? 1 : '' %>">
+    <select name="sort">
+      <% { 'newest' => 'Newest', 'popular' => 'Most watched', 'least' => 'Least watched',
+           'title' => 'Title', 'random' => 'Surprise me' }.each do |k, label| %>
+        <option value="<%= k %>"<%= ' selected' if @sort == k %>><%= label %></option>
+      <% end %>
+    </select>
+  </form>
+  <div class="tags filter-tags">
+    <a class="chip<%= ' on' if @tag.empty? && !@fav %>" href="/library">All</a>
+    <a class="chip fav-chip<%= ' on' if @fav %>" href="/library?fav=1">★ Favorites</a>
+    <% @tags.each do |t| %><%== partial(:_tag, name: t[:name], count: t[:n], on: @tag == t[:name]) %><% end %>
+  </div>
+  <div id="grid" class="grid">
+    <%== partial(:_cards, videos: @videos, next_url: (@more ? library_path(page: @page + 1) : nil)) %>
+  </div>
+</section>

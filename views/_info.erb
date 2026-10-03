@@ -1,0 +1,23 @@
+<div class="title-row" data-poster="<%= thumb_url(v) %>" data-title="<%= v.title %>">
+  <h1><%= v.title %></h1>
+  <div class="title-actions">
+    <%== partial(:_fav, v: v) %>
+    <button type="button" class="ghost" hx-get="/videos/<%= v.id %>/edit" hx-target="#info">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg> Edit
+    </button>
+  </div>
+</div>
+<% if defined?(notice) && notice %><p class="notice" role="status"><%= notice %></p><% end %>
+<% if v.ready? && v.error %>
+  <p class="notice failed" role="status">Last reprocess failed: <%= v.error %> — still playing the previous version.</p>
+<% end %>
+<% unless v.tags.empty? %>
+  <div class="tags video-tags"><% v.tags.each do |t| %><%== partial(:_tag, name: t.name) %><% end %></div>
+<% end %>
+<p class="facts">
+  <% if v.duration_label %><span><%= v.duration_label %></span><% end %>
+  <% if v.width %><span><%= v.width %>×<%= v.height %></span><% end %>
+  <span><%= v.view_count %> view<%= 's' unless v.view_count == 1 %></span>
+  <span class="path" title="<%= v.rel_path %>"><%= File.basename(v.rel_path) %></span>
+</p>
+<% unless v.description.to_s.empty? %><p class="desc"><%= v.description %></p><% end %>

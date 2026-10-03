@@ -1,0 +1,23 @@
+<% tags = v.tag_names %>
+<article class="card"<% if v.ready? %> data-preview="/previews/<%= v.id %>.mp4"<% end %>>
+  <div class="thumb">
+    <% if v.ready? %>
+      <img src="<%= thumb_url(v) %>" alt="" loading="lazy">
+      <% if v.duration_label %><span class="badge dur"><%= v.duration_label %></span><% end %>
+      <% if v.favorite %><span class="badge fav" title="Favorite">★</span><% end %>
+      <% if v.progress_pct.positive? %><span class="bar"><i style="width:<%= v.progress_pct %>%"></i></span><% end %>
+    <% else %>
+      <div class="pending"><%= v.status == 'error' ? 'Error' : 'Processing…' %></div>
+    <% end %>
+  </div>
+  <div class="meta">
+    <h3><a class="card-link" href="/videos/<%= v.id %>"><%= v.title %></a></h3>
+    <% unless tags.empty? %>
+      <div class="tags card-tags">
+        <% tags.first(3).each do |t| %><%== partial(:_tag, name: t) %><% end %>
+        <% if tags.size > 3 %><span class="tag-more">+<%= tags.size - 3 %></span><% end %>
+      </div>
+    <% end %>
+    <% if v.view_count.positive? %><small class="views"><%= v.view_count %> view<%= 's' unless v.view_count == 1 %></small><% end %>
+  </div>
+</article>

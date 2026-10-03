@@ -1,0 +1,22 @@
+<% unless @continue.empty? %>
+  <section>
+    <h2>Continue watching</h2>
+    <div class="grid"><% @continue.each do |v| %><%== partial(:_card, v: v) %><% end %></div>
+  </section>
+<% end %>
+
+<section>
+  <h2>For you</h2>
+  <% if @mix.empty? %>
+    <p class="empty">No videos yet. Drop some into your media folder — argentum will find them and get them ready.</p>
+  <% else %>
+    <div class="grid"><% @mix.each do |v| %><%== partial(:_card, v: v) %><% end %></div>
+  <% end %>
+</section>
+
+<% unless @recent.empty? %>
+  <section>
+    <h2>Recently added</h2>
+    <div class="grid"><% @recent.each do |v| %><%== partial(:_card, v: v) %><% end %></div>
+  </section>
+<% end %>

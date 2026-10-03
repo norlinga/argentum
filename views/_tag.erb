@@ -1,0 +1,1 @@
+<a class="tag<%= ' on' if defined?(on) && on %>" style="<%= tag_style(name) %>" href="/library?tag=<%= Rack::Utils.escape(name) %>"><%= name %><% if defined?(count) && count %> <small><%= count %></small><% end %></a>

@@ -1,0 +1,15 @@
+<div id="ignored"<% if defined?(oob) && oob %> hx-swap-oob="true"<% end %>>
+  <% if videos.empty? %>
+    <p class="empty">Nothing removed.</p>
+  <% else %>
+    <ul class="ignored-list">
+      <% videos.each do |v| %>
+        <li>
+          <span class="path" title="<%= v.rel_path %>"><%= v.rel_path %></span>
+          <span class="muted"><%= v.width && "#{v.width}×#{v.height}" %> <%= human_size(v.size) %></span>
+          <button type="button" hx-post="/videos/<%= v.id %>/restore" hx-target="closest li" hx-swap="outerHTML">Restore</button>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

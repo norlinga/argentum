@@ -1,0 +1,4 @@
+<p class="notice dupe-done" role="status">
+  <% if removed.zero? %>Nothing removed.<% else %>Removed <%= removed %> cop<%= removed == 1 ? 'y' : 'ies' %>.<% end %>
+  <% unless kept.empty? %>Kept <%= kept.map { |k| File.basename(k.rel_path) }.join(', ') %>.<% end %>
+</p>

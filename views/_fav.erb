@@ -1,0 +1,2 @@
+<button type="button" class="ghost fav-btn<%= ' on' if v.favorite %>" hx-post="/videos/<%= v.id %>/favorite" hx-swap="outerHTML"
+        aria-pressed="<%= v.favorite %>" title="Toggle favorite"><%= v.favorite ? '★ Favorited' : '☆ Favorite' %></button>

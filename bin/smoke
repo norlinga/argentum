@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Smoke-test a built production image: generate a sample clip, boot the image on a
+# throwaway data volume, and wait until the clip is ingested and served as HLS.
+# Proves what the test container can't — the production image's native gems,
+# SQLite and FFmpeg work together. Usage: bin/smoke [image]   (default: argentum)
+set -euo pipefail
+
+image=${1:-argentum}
+timeout=${SMOKE_TIMEOUT:-180}
+name="argentum-smoke-$$"
+media=$(mktemp -d)
+
+cleanup() {
+  docker rm -fv "$name" >/dev/null 2>&1 || true # -v: also drop its anonymous /data volume
+  rm -rf "$media"
+}
+trap cleanup EXIT
+
+fail() {
+  echo "smoke: FAIL — $*" >&2
+  echo "---- container logs ----" >&2
+  docker logs "$name" 2>&1 | tail -40 >&2 || true
+  exit 1
+}
+
+echo "smoke: generating a sample clip with the image's ffmpeg"
+docker run --rm --user "$(id -u):$(id -g)" -v "$media:/out" "$image" \
+  ffmpeg -v error -f lavfi -i testsrc=duration=5:size=320x240:rate=24 \
+  -c:v libx264 -pix_fmt yuv420p /out/sample.mp4
+
+echo "smoke: starting $image"
+docker run -d --rm --name "$name" -p 127.0.0.1::4567 \
+  -v "$media:/media:ro" -e ARGENTUM_SCAN_INTERVAL=0 "$image" >/dev/null
+port=$(docker port "$name" 4567/tcp | head -1 | sed 's/.*://')
+base="http://127.0.0.1:$port"
+
+echo "smoke: waiting up to ${timeout}s for ingest at $base"
+deadline=$((SECONDS + timeout))
+until curl -fsS "$base/hls/1/index.m3u8" 2>/dev/null | grep -q '#EXTM3U'; do
+  docker inspect "$name" >/dev/null 2>&1 || fail "container exited"
+  ((SECONDS < deadline)) || fail "sample not ingested within ${timeout}s"
+  sleep 2
+done
+
+check() { # check <description> <expected status> <curl args...>
+  local what=$1 want=$2
+  shift 2
+  local got
+  got=$(curl -s -o /dev/null -w '%{http_code}' "$@")
+  [[ $got == "$want" ]] || fail "$what: expected HTTP $want, got $got"
+  echo "smoke: ok  $what ($got)"
+}
+
+check 'home page'                 200 "$base/"
+check 'video page'                200 "$base/videos/1"
+check 'thumbnail'                 200 "$base/thumbs/1.jpg"
+check 'motion preview'            200 "$base/previews/1.mp4"
+check 'original, byte range'      206 -H 'Range: bytes=0-99' "$base/media/1"
+check 'cross-origin write refused' 403 -X POST -H 'Origin: http://evil.example' "$base/videos/1/favorite"
+
+uid=$(docker exec "$name" awk '/^Uid:/ { print $2 }' /proc/1/status)
+[[ $uid == 1000 ]] || fail "server runs as uid $uid, expected the unprivileged argentum user (1000)"
+echo "smoke: ok  server runs unprivileged (uid $uid)"
+
+# Upgrades: a data volume written by an older, root-run image must be handed over.
+legacy="argentum-smoke-legacy-$$"
+docker run --rm --user 0 --entrypoint sh -v "$legacy:/data" "$image" \
+  -c 'mkdir -p /data/hls/1 && touch /data/argentum.db /data/hls/1/index.m3u8'
+owners=$(docker run --rm -v "$legacy:/data" "$image" find /data ! -user argentum)
+docker volume rm "$legacy" >/dev/null
+[[ -z $owners ]] || fail "root-owned data volume not migrated: $owners"
+echo "smoke: ok  root-owned data volume migrated to argentum"
+
+echo "smoke: PASS"

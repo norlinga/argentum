@@ -1,0 +1,5 @@
+<% videos.each do |v| %><%== partial(:_card, v: v) %><% end %>
+<% if videos.empty? %><p class="empty">Nothing here yet.</p><% end %>
+<% if next_url %>
+  <div class="sentinel" hx-get="<%= next_url %>" hx-trigger="revealed" hx-swap="outerHTML"></div>
+<% end %>

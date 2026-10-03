@@ -1,0 +1,58 @@
+<section class="page-head">
+  <h1>Duplicates</h1>
+  <p class="lede">Videos whose length and frames match — usually the same footage saved in different encodings.
+    Pick which copies to remove. Removed copies stay on disk untouched, but argentum hides them, frees
+    their generated files and won't ingest them again. You can restore them below at any time.</p>
+  <% if @unfingerprinted.positive? %>
+    <p class="notice" role="status"><span class="spinner" aria-hidden="true"></span>
+      Analysing <%= @unfingerprinted %> video<%= 's' unless @unfingerprinted == 1 %> that predate duplicate detection —
+      <a href="/duplicates">refresh</a> in a moment for complete results.</p>
+  <% end %>
+</section>
+
+<section>
+  <h2><%= @groups.size %> possible duplicate group<%= 's' unless @groups.size == 1 %></h2>
+  <% if @groups.empty? %>
+    <p class="empty">No duplicates found.</p>
+  <% end %>
+  <div class="dupe-list">
+    <% @groups.each do |group| %>
+      <form class="dupe-group" hx-post="/duplicates/remove" hx-swap="outerHTML">
+        <div class="dupe-items">
+          <% group.each_with_index do |v, i| %>
+            <input type="hidden" name="ids[]" value="<%= v.id %>">
+            <label class="dupe">
+              <span class="dupe-thumb"><img src="<%= thumb_url(v) %>" alt="" loading="lazy">
+                <% if i.zero? %><span class="badge keep">Suggested keep</span><% end %></span>
+              <span class="dupe-title"><a href="/videos/<%= v.id %>"><%= v.title %></a></span>
+              <span class="dupe-path" title="<%= v.rel_path %>"><%= v.rel_path %></span>
+              <span class="dupe-facts">
+                <span><%= v.width %>×<%= v.height %></span>
+                <span><%= v.vcodec %><%= "/#{v.acodec}" if v.acodec %></span>
+                <span><%= human_size(v.size) %></span>
+                <span><%= v.duration_label %></span>
+                <% if v.view_count.positive? %><span><%= v.view_count %> view<%= 's' unless v.view_count == 1 %></span><% end %>
+                <% if v.favorite %><span class="fav-on">★</span><% end %>
+              </span>
+              <span class="dupe-choice">
+                <input type="checkbox" name="remove[]" value="<%= v.id %>"<%= ' checked' unless i.zero? %>>
+                <span class="when-keep">Keep</span><span class="when-remove">Remove</span>
+              </span>
+            </label>
+          <% end %>
+        </div>
+        <p class="warn">Every copy is marked for removal — this video will disappear from the library.</p>
+        <div class="actions">
+          <button type="submit" class="danger">Remove marked copies</button>
+          <button type="button" hx-post="/duplicates/dismiss" hx-include="closest form" hx-target="closest form"
+                  hx-swap="outerHTML">Not duplicates</button>
+        </div>
+      </form>
+    <% end %>
+  </div>
+</section>
+
+<section>
+  <h2>Removed from library</h2>
+  <%== partial(:_ignored, videos: @ignored) %>
+</section>

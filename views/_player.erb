@@ -1,0 +1,23 @@
+<div id="stage"<% if defined?(oob) && oob %> hx-swap-oob="true"<% end %>
+     <% if %w[pending processing].include?(v.status) %>hx-get="/videos/<%= v.id %>/player" hx-trigger="every 5s" hx-swap="outerHTML"<% end %>>
+  <% if v.ready? %>
+    <video id="player" class="video-js vjs-big-play-centered vjs-fluid" controls preload="auto"
+           poster="<%= thumb_url(v) %>"
+           data-id="<%= v.id %>" data-start="<%= v.position %>" data-hls="<%= v.hls_ready %>"
+           data-ext-type="<%= Rack::Mime.mime_type(File.extname(v.rel_path), 'video/mp4') %>"></video>
+  <% elsif v.status == 'ignored' %>
+    <div class="pending big">
+      <p>This video was removed from the library, so argentum no longer processes it. The file itself hasn't been touched.</p>
+      <form method="post" action="/videos/<%= v.id %>/restore"><button class="primary">Restore to library</button></form>
+    </div>
+  <% elsif v.status == 'error' %>
+    <div class="pending big">
+      <p>Couldn't process this video: <%= v.error %></p>
+      <form method="post" action="/videos/<%= v.id %>/reprocess"><button class="primary">Retry</button></form>
+    </div>
+  <% elsif v.status == 'missing' %>
+    <div class="pending big"><p>The file for this video can't be found in the media folder.</p></div>
+  <% else %>
+    <div class="pending big"><p><span class="spinner" aria-hidden="true"></span> This video is still being prepared…</p></div>
+  <% end %>
+</div>

@@ -1,0 +1,55 @@
+<!doctype html>
+<% cfg = Argentum::Config %>
+<html lang="en"<% unless cfg.theme == 'system' %> data-theme="<%= cfg.theme %>"<% end %>>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title><%= @page_title ? "#{@page_title} · #{cfg.title}" : cfg.title %></title>
+  <%# Apply the viewer's remembered theme before first paint (no flash). %>
+  <script>try { var t = localStorage.getItem('argentum-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <link rel="icon" href="<%= cfg.logo_url || '/icon.svg' %>">
+  <link rel="stylesheet" href="/css/argentum.css">
+  <%# Vendored: htmx 2.0.4, Video.js 8.16.1 (public/vendor) — no CDN needed on the LAN. %>
+  <script src="/vendor/htmx/htmx.min.js"></script>
+  <% if @video %>
+    <link rel="stylesheet" href="/vendor/videojs/video-js.min.css">
+    <script src="/vendor/videojs/video.min.js"></script>
+  <% end %>
+  <script src="/js/argentum.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">
+      <% if cfg.logo_url %><img class="brand-logo" src="<%= cfg.logo_url %>" alt=""><% end %>
+      <span class="brand-text">
+        <span class="brand-title"><%= cfg.title %></span>
+        <% unless cfg.tagline.empty? %><span class="brand-tagline"><%= cfg.tagline %></span><% end %>
+      </span>
+    </a>
+    <nav>
+      <a href="/"<% if nav_on?(:home) %> class="on" aria-current="page"<% end %>>Home</a>
+      <a href="/library"<% if nav_on?(:library) %> class="on" aria-current="page"<% end %>>Library</a>
+      <a href="/library?fav=1"<% if nav_on?(:fav) %> class="on" aria-current="page"<% end %>>Favorites</a>
+    </nav>
+    <form action="/library" method="get" class="search" role="search">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" name="q" placeholder="Search videos…" value="<%= @q %>" aria-label="Search videos">
+    </form>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">
+      <svg class="i-moon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      <svg class="i-sun" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </header>
+  <main>
+    <%== yield %>
+  </main>
+  <footer>
+    <span id="status" hx-get="/status" hx-trigger="load, every 5s" hx-swap="innerHTML"></span>
+    <button class="link" hx-post="/scan" hx-target="#status">Rescan library</button>
+    <button class="link" hx-post="/reprocess" hx-target="#status"
+            hx-confirm="Regenerate stills, previews and HLS segments for every video? This can take a while; your chosen thumbnails are kept.">Reprocess all</button>
+    <a class="link" href="/duplicates">Duplicates</a>
+  </footer>
+</body>
+</html>

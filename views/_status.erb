@@ -1,0 +1,2 @@
+<% if scanning %>Scanning…<% end %>
+<% if outstanding.positive? %><span class="busy">⏳ Preparing <%= outstanding %> video<%= 's' unless outstanding == 1 %>…</span><% end %>

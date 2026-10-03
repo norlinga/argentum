@@ -1,0 +1,63 @@
+# `docker compose up` runs only the production service. The dev and test services
+# are behind the "dev" profile — use the Makefile (`make help`) rather than typing these.
+services:
+  argentum:
+    build:
+      context: .
+      target: production
+    image: argentum
+    restart: unless-stopped
+    ports:
+      - "${ARGENTUM_PORT:-4567}:4567"
+    environment:
+      # Seconds between automatic rescans of the media dir (0 = only at startup / manual)
+      ARGENTUM_SCAN_INTERVAL: "${ARGENTUM_SCAN_INTERVAL:-60}"
+      # Seconds a new or changed file must be untouched before it's processed (still arriving)
+      ARGENTUM_SETTLE_SECONDS: "${ARGENTUM_SETTLE_SECONDS:-20}"
+      ARGENTUM_FFMPEG_THREADS: "${ARGENTUM_FFMPEG_THREADS:-1}"
+      # Branding — see .env.example
+      ARGENTUM_TITLE: "${ARGENTUM_TITLE:-argentum}"
+      ARGENTUM_TAGLINE: "${ARGENTUM_TAGLINE-family video library}"
+      ARGENTUM_LOGO: "${ARGENTUM_LOGO:-}"
+      ARGENTUM_THEME: "${ARGENTUM_THEME:-dark}"
+    volumes:
+      # Your videos stay exactly where they are; mounted read-only.
+      - "${ARGENTUM_MEDIA_HOST_DIR:-./media}:/media:ro"
+      # Database, thumbnails, previews and HLS segments.
+      - argentum-data:/data
+
+  # The working copy, served from the dev toolchain image. Restart to pick up Ruby
+  # changes (views and assets are re-read per request). Uses its own data volume,
+  # so it can never touch the production library.
+  dev:
+    profiles: [dev]
+    build:
+      context: .
+      target: dev
+    image: argentum:dev
+    ports:
+      - "${ARGENTUM_DEV_PORT:-4568}:4567"
+    environment:
+      ARGENTUM_SCAN_INTERVAL: "${ARGENTUM_SCAN_INTERVAL:-60}"
+      ARGENTUM_SETTLE_SECONDS: "${ARGENTUM_SETTLE_SECONDS:-20}"
+      ARGENTUM_FFMPEG_THREADS: "${ARGENTUM_FFMPEG_THREADS:-1}"
+    volumes:
+      - .:/app
+      - "${ARGENTUM_MEDIA_HOST_DIR:-./media}:/media:ro"
+      - argentum-dev-data:/data
+
+  # The test suite against the working copy. Tests use their own temp dirs inside the
+  # container, so nothing is written to the bind mount.
+  test:
+    profiles: [dev]
+    build:
+      context: .
+      target: test
+    image: argentum:test
+    volumes:
+      - .:/app
+
+volumes:
+  argentum-data: # keep this un-named: existing installs hold their library in <project>_argentum-data
+  argentum-dev-data:
+    name: argentum-dev-data # fixed name so `make clean` can remove it

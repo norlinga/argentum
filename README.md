@@ -100,6 +100,8 @@ Bookworm Ruby slim base to keep native extensions compatible.
 FFmpeg and its codec libraries remain a substantial part of the image. A custom
 codec build could reduce that further, but would narrow format support and require
 maintaining a separate FFmpeg build. Debian slim keeps the existing codec support.
+The production build does remove some obviously unnecessary libraries - fiddle with the ffmpeg
+guts that remain at your own risk.
 
 Ingestion runs one video at a time. Preview samples decode sequentially, and
 `ARGENTUM_FFMPEG_THREADS=1` limits codec/filter threading by default. This trades

@@ -46,9 +46,20 @@ CMD ["bundle", "exec", "rake", "test"]
 FROM base AS production
 # The app runs as "argentum" (uid 1000, the usual first desktop user, so files it
 # reads from a bind-mounted media folder are typically already accessible).
+#
+# Debian's FFmpeg drags in a desktop GPU stack (LLVM, Mesa's DRI drivers, Z3: ~160 MB)
+# for ffplay and OpenGL filters. ffmpeg/ffprobe don't link it; it's only loaded when
+# something opens an OpenGL context, which a headless server never does. Remove it
+# (matched by pattern so a newer Debian's libllvmNN is caught too), then fail the
+# build if either binary is missing a library. dpkg now considers those dependencies
+# broken, so this must stay the last package operation in this stage.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg libsqlite3-0 \
  && rm -rf /var/lib/apt/lists/* \
+ && dpkg --purge --force-depends \
+      $(dpkg-query -W -f '${db:Status-Status} ${Package}\n' 'libllvm*' 'libgl1-mesa-dri' 'libz3-*' \
+        | awk '$1 == "installed" { print $2 }') \
+ && ! ldd /usr/bin/ffmpeg /usr/bin/ffprobe | grep 'not found' \
  && groupadd --gid 1000 argentum \
  && useradd --uid 1000 --gid argentum --create-home --shell /usr/sbin/nologin argentum \
  && mkdir -p /data \
